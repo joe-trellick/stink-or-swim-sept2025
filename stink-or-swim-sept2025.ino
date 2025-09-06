@@ -106,10 +106,7 @@ static void prepareTxFrame( uint8_t port )
 void downLinkDataHandle(McpsIndication_t *mcpsIndication)
 {
   int servoByte;
-  int pos=0;
   char str[30];
-
-  myServo.attach(servoPin, SERVO_LOW, SERVO_HIGH);
 
   Serial.printf("+REV DATA:%s,RXSIZE %d,PORT %d\r\n",mcpsIndication->RxSlot?"RXWIN2":"RXWIN1",mcpsIndication->BufferSize,mcpsIndication->Port);
   Serial.print("+REV DATA:");
@@ -125,7 +122,17 @@ void downLinkDataHandle(McpsIndication_t *mcpsIndication)
   sprintf(str,"Received %d",servoByte);
   display.drawString(64,10,str);
   display.display();
+
+  updateForServoByte(servoByte);
   
+  turnOnLed("DOWNLINK WITH PAYLOAD");
+  Serial.println("...and now we sleep...");
+}
+
+void updateForServoByte(int servoByte) {
+  int pos=0;
+  myServo.attach(servoPin, SERVO_LOW, SERVO_HIGH);
+
   switch(servoByte) {
     case 0: // No recent spills
       pos=NO_SPILLS;
@@ -163,8 +170,6 @@ void downLinkDataHandle(McpsIndication_t *mcpsIndication)
   Serial.print(pos);
   Serial.println(" degrees.");
   myServo.detach();
-  turnOnLed("DOWNLINK WITH PAYLOAD");
-  Serial.println("...and now we sleep...");
 }
 
 String howLongSinceDownlink() {
