@@ -27,7 +27,7 @@ static SSD1306Wire  display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, R
 touch_pad_t touchPin;  // we will use GPIO 6 as a touchpin to wake up the display
 
 /*  CHANGE THESE VALUES FOR YOUR DEVICE  */
-char * startup_msg = "Hello water geeks";
+char * startup_msg = "jj-cleansee";
 
 #define NO_SPILLS 0    // The angle of the pointer when there are no recent spills
 #define ONGOING_SPILL 180  // The angle of the pointer when there is an ongoing spill
@@ -45,7 +45,7 @@ const int amberLed=4;    // The GPIO for the amber LED pin
 const int redLed=3;      // The GPIO for the red LED pin
 RTC_DATA_ATTR int ledToLight=0;
 /*  LoRaWAN Parameters - CHANGE THE DEV EUI for your device  */
-uint8_t devEui[] = { 0x70, 0xb3, 0xd5, 0x7e, 0xd0, 0x06, 0xcc, 0xcc };
+uint8_t devEui[] = { 0x70, 0xb3, 0xd5, 0x7e, 0xd0, 0x06, 0xff, 0xcc };
 
 /*  Other LoRaWAN parameters - DON'T CHANGE THESE IN THE WORKSHOP */
 uint8_t appEui[] = { 0x00, 0x12, 0x00, 0x12, 0x00, 0x12, 0x00, 0x12 };
@@ -84,7 +84,7 @@ uint8_t confirmedNbTrials = 4;
 
 /*the application data transmission duty cycle.  value in [ms].*/
 // IF YOUR DEVICE IS BATTERY POWERED I strongly recommend increasing this value to 1 hour or more - 6?
-uint32_t appTxDutyCycle = 300000;   // send a message every 5 mins (300 secs or 300,000 microseconds). 1 hour is 3600000
+uint32_t appTxDutyCycle = 60000;   // send a message every 5 mins (300 secs or 300,000 microseconds). 1 hour is 3600000
 
 
 /* Two counters to estimate how long ago the previous downlink was received */
@@ -237,6 +237,25 @@ void turnOnLed(char * status) {
     digitalWrite(ledToLight, HIGH);
   }
 }
+
+String bytesToHex(const uint8_t* buf, size_t len,
+                  char sep = ' ', int bytesPerLine = 8, bool lowercase = false) {
+  const char* D = lowercase ? "0123456789abcdef" : "0123456789ABCDEF";
+  size_t lines = bytesPerLine ? (len + bytesPerLine - 1) / bytesPerLine : 1;
+  size_t seps  = sep ? (len ? (len - 1) : 0) : 0;
+  size_t nl    = lines ? (lines - 1) : 0;
+  String s; s.reserve(len * 2 + seps + nl);
+
+  for (size_t i = 0; i < len; ++i) {
+    if (i && sep && (i % bytesPerLine)) s += sep;
+    if (i && bytesPerLine && (i % bytesPerLine) == 0) s += '\n';
+    uint8_t v = buf[i];
+    s += D[v >> 4];
+    s += D[v & 0x0F];
+  }
+  return s;
+}
+
 void setup() {
   Serial.begin(115200);
   Mcu.begin(HELTEC_BOARD,SLOW_CLK_TPYE);
@@ -245,6 +264,9 @@ void setup() {
 	display.setFont(ArialMT_Plain_16);	//	set the font
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.drawString(64,10,startup_msg);
+  display.setFont(ArialMT_Plain_10);	//	set the font
+  display.drawString(64,28,bytesToHex(devEui, 8));
+   display.setFont(ArialMT_Plain_16);	//	set the font
   display.display();
   ESP32PWM::allocateTimer(0);
 	ESP32PWM::allocateTimer(1);
